@@ -1,21 +1,26 @@
 class Semaforo:
-    def __init__(self, direccion, verde=True, u=5):
+    def __init__(self, direccion):
         self.direccion = direccion
-        self.verde = verde
+        self.estado = "Rojo"
         self.tiempo_verde = 0
-        self.u = u  # tiempo mínimo en verde
-        self.contador = 0  # vehículos esperando en rojo
-
-    def cambiar(self, nuevo_estado=None):
-        """Cambia el semáforo (verde/rojo)."""
-        if nuevo_estado is None:
-            self.verde = not self.verde
-        else:
-            self.verde = nuevo_estado
         self.contador = 0
-        self.tiempo_verde = 0
 
-    def paso(self):
-        """Aumenta el contador de tiempo en verde."""
-        if self.verde:
+    def actualizar(self, vehiculos_esperando, umbral_cambio=3, tiempo_minimo=2):
+        """
+        Aplicar reglas de autoorganizacion
+        """
+        self.contador = vehiculos_esperando
+
+        # Regla 1: tiempo minimo en verde
+        if self.estado == "Verde":
             self.tiempo_verde += 1
+            if self.tiempo_verde < tiempo_minimo:
+                return
+
+        # Regla 2: cambiar si hay suficientes vehiculos esperando
+        if self.contador >= umbral_cambio:
+            self.estado = "Verde"
+            self.tiempo_verde = 0
+        else:
+            self.estado = "Rojo"
+

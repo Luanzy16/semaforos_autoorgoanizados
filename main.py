@@ -1,15 +1,9 @@
-from interseccion import Interseccion
+from simulacion import Simulacion
+import time
 
-# Crear intersección
-inter = Interseccion()
+sim = Simulacion()
 
-# Agregar autos iniciales
-for _ in range(5):
-    inter.agregar_vehiculo("N")
-    inter.agregar_vehiculo("E")
-
-# Simulación
-for t in range(20):
-    print(f"\nTiempo {t}")
-    inter.paso()
-    print(inter.estado())
+# Simular 10 pasos
+for _ in range(10):
+    sim.paso()
+    time.sleep(1)  # esperar 1 segundo para ver la salida paso a paso

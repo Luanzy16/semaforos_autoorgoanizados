@@ -1,10 +1,19 @@
 class Vehiculo:
-    def __init__(self, posicion, direccion):
-        self.posicion = posicion  # distancia a la intersección (0 = en la línea)
-        self.direccion = direccion  # "N" o "E"
+    def __init__(self, direccion):
+        self.posicion = 0
+        self.direccion = direccion  # "NS" o "EW"
         self.detenido = False
 
-    def mover(self):
-        """Avanza hacia la intersección si no está detenido."""
-        if not self.detenido:
-            self.posicion -= 1
+    def mover(self, semaforo):
+        if self.detenido:
+            # Revisar si semáforo verde
+            if semaforo.estado == "Verde":
+                self.detenido = False
+                self.posicion += 1
+        else:
+            # Avanzar si semáforo verde o sin semáforo
+            if semaforo.estado == "Rojo" and self.posicion == 0:
+                self.detenido = True
+            else:
+                self.posicion += 1
+    
