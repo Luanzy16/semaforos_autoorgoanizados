@@ -1,69 +1,84 @@
-from vehiculo import Vehiculo
+import random
 from semaforo import Semaforo
+from vehiculo import Vehiculo
 
 class Interseccion:
-    def __init__(self, nombre):
+    def __init__(self, nombre, posicion):
         self.nombre = nombre
+        self.posicion = posicion  # (x,y) en canvas
+
+        # Semáforos
         self.semaforo_NS = Semaforo("NS")
         self.semaforo_EW = Semaforo("EW")
-        self.vehiculos_NS = []
-        self.vehiculos_EW = []
-        # Parámetros para las reglas
-        self.distancia_corta_r = 2
-        self.distancia_mas_alla_e = 5
+        self.semaforo_NS.poner_verde()  # inicia NS en verde
+
+        # Colas de vehículos
+        self.cola_NS = []
+        self.cola_EW = []
+
+        # Reglas
+        self.max_cola = 5
 
     def agregar_vehiculo(self, direccion):
         if direccion == "NS":
-            self.vehiculos_NS.append(Vehiculo("NS"))
-        else:
-            self.vehiculos_EW.append(Vehiculo("EW"))
-
-    def actualizar_vehiculos(self):
-        # Mover vehículos
-        for v in self.vehiculos_NS:
-            v.mover(self.semaforo_NS)
-        for v in self.vehiculos_EW:
-            v.mover(self.semaforo_EW)
-
-        # Eliminar vehículos que ya cruzaron la intersección (para simular el flujo)
-        self.vehiculos_NS = [v for v in self.vehiculos_NS if v.posicion <= 20] # Se mantiene por 20 pasos de tiempo
-        self.vehiculos_EW = [v for v in self.vehiculos_EW if v.posicion <= 20]
+            self.cola_NS.append(Vehiculo("NS"))
+        elif direccion == "EW":
+            self.cola_EW.append(Vehiculo("EW"))
 
     def actualizar_semaforos(self):
-        # Recopilar datos de tráfico
-        esperando_NS = sum(1 for v in self.vehiculos_NS if v.detenido)
-        esperando_EW = sum(1 for v in self.vehiculos_EW if v.detenido)
+        """Aplica las reglas autoorganizadas."""
+        # Actualizar contadores
+        self.semaforo_NS.actualizar(self.semaforo_NS.estado == "verde")
+        self.semaforo_EW.actualizar(self.semaforo_EW.estado == "verde")
 
-        cerca_NS = sum(1 for v in self.vehiculos_NS if 0 < v.posicion <= self.distancia_corta_r)
-        cerca_EW = sum(1 for v in self.vehiculos_EW if 0 < v.posicion <= self.distancia_corta_r)
+        if self.semaforo_NS.estado == "verde":
+            # Condiciones para cambiar a EW
+            if self.semaforo_NS.tiempo_verde_actual >= self.semaforo_NS.tiempo_minimo:
+                if len(self.cola_EW) >= self.max_cola or self.semaforo_EW.tiempo_rojo >= self.semaforo_EW.max_rojo:
+                    self.semaforo_NS.poner_rojo()
+                    self.semaforo_EW.poner_verde()
 
-        detenidos_mas_alla_NS = any(v.detenido and v.posicion > self.distancia_mas_alla_e for v in self.vehiculos_NS)
-        detenidos_mas_alla_EW = any(v.detenido and v.posicion > self.distancia_mas_alla_e for v in self.vehiculos_EW)
+        elif self.semaforo_EW.estado == "verde":
+            # Condiciones para cambiar a NS
+            if self.semaforo_EW.tiempo_verde_actual >= self.semaforo_EW.tiempo_minimo:
+                if len(self.cola_NS) >= self.max_cola or self.semaforo_NS.tiempo_rojo >= self.semaforo_NS.max_rojo:
+                    self.semaforo_EW.poner_rojo()
+                    self.semaforo_NS.poner_verde()
 
-        # Regla 6: Lógica para vehículos detenidos en ambas direcciones
-        if detenidos_mas_alla_NS and detenidos_mas_alla_EW:
-            self.semaforo_NS.estado = "Rojo"
-            self.semaforo_EW.estado = "Rojo"
-            return
-        
-        # Regla 4: Lógica para vehículos detenidos en una sola dirección
-        if detenidos_mas_alla_NS:
-            self.semaforo_NS.estado = "Rojo"
-        if detenidos_mas_alla_EW:
-            self.semaforo_EW.estado = "Rojo"
-            
-        # Lógica de actualización normal
-        self.semaforo_NS.actualizar(
-            vehiculos_esperando=esperando_NS,
-            vehiculos_cerca=cerca_NS
-        )
-        self.semaforo_EW.actualizar(
-            vehiculos_esperando=esperando_EW,
-            vehiculos_cerca=cerca_EW
-        )
+    def actualizar_vehiculos_logica(self):
+        """Avanza un vehículo si su semáforo está en verde."""
+        if self.semaforo_NS.estado == "verde" and self.cola_NS:
+            self.cola_NS.pop(0)
+        if self.semaforo_EW.estado == "verde" and self.cola_EW:
+            self.cola_EW.pop(0)
+
+    def actualizar_vehiculos_visual(self):
+        """(placeholder) Movimiento animado."""
+        for v in self.cola_NS + self.cola_EW:
+            v.mover()
+
+    def dibujar_en_canvas(self, canvas, ancho_calle):
+        """Dibuja semáforos en el canvas."""
+        x, y = self.posicion
+        r = 10
+        # NS
+        color_ns = "green" if self.semaforo_NS.estado == "verde" else "red"
+        canvas.create_oval(x-r, y-40-r, x+r, y-40+r, fill=color_ns, tags="semaforo")
+        # EW
+        color_ew = "green" if self.semaforo_EW.estado == "verde" else "red"
+        canvas.create_oval(x+40-r, y-r, x+40+r, y+r, fill=color_ew, tags="semaforo")
+
+    def dibujar_vehiculos_en_canvas(self, canvas, ancho_calle):
+        x, y = self.posicion
+        size = 8
+        # NS
+        for i, _ in enumerate(self.cola_NS):
+            canvas.create_rectangle(x-10, y-60-(i*12), x+10, y-50-(i*12), fill="blue", tags="vehiculo")
+        # EW
+        for i, _ in enumerate(self.cola_EW):
+            canvas.create_rectangle(x+60+(i*12), y-10, x+70+(i*12), y+10, fill="yellow", tags="vehiculo")
 
     def imprimir_estado(self):
-        print(f"Interseccion {self.nombre}:")
-        print(f"  Semaforo NS: {self.semaforo_NS.estado}, Vehiculos esperando: {self.semaforo_NS.contador_vehiculos}")
-        print(f"  Semaforo EW: {self.semaforo_EW.estado}, Vehiculos esperando: {self.semaforo_EW.contador_vehiculos}")
-        print(f"  Total vehiculos NS: {len(self.vehiculos_NS)}, EW: {len(self.vehiculos_EW)}\n")
+        print(f"Intersección {self.nombre}: "
+              f"NS({self.semaforo_NS.estado}, {len(self.cola_NS)} autos), "
+              f"EW({self.semaforo_EW.estado}, {len(self.cola_EW)} autos))")
