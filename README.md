@@ -111,4 +111,4 @@ Este modelo representa un sistema **autoorganizado** de control de tráfico porq
  Abre una terminal dentro de la carpeta del proyecto y ejecuta:
 
 ```bash
-python simulacion.py
+python simulacionGUI.py
