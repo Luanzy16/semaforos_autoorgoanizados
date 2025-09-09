@@ -1,8 +1,8 @@
 class Vehiculo:
     def __init__(self, direccion):
-        self.direccion = direccion  # "NS" o "EW"
+        self.direccion = direccion  # "NS" o "EW" - dirección de movimiento del vehiculo
         self.pos = 0  # distancia relativa en la cola (simplificado)
 
     def mover(self):
-        """En animación podría mover su posición; aquí placeholder."""
-        self.pos += 1
+        #Simula el movimiento del vehiculo incrementando su posición
+        self.pos += 1 #Incremente de a 1 
